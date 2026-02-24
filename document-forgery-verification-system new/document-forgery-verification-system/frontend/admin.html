@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+
+    <!-- Flask Static CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #141e30, #243b55);
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .dashboard-container {
+            padding: 40px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-header a {
+            color: #ff4d4d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .green { background: rgba(0,255,0,0.2); }
+        .orange { background: rgba(255,165,0,0.2); }
+        .red { background: rgba(255,0,0,0.2); }
+
+        .log-table {
+            margin-top: 50px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(255,255,255,0.15);
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .badge-genuine { background: #28a745; }
+        .badge-suspicious { background: #ff9800; }
+        .badge-fake { background: #dc3545; }
+    </style>
+
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <div class="dashboard-header">
+        <h1>Verification Admin Dashboard</h1>
+        <a href="/logout">Logout</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Verified</h3>
+            <p id="totalCount">0</p>
+        </div>
+
+        <div class="stat-card green">
+            <h3>Genuine</h3>
+            <p id="genuineCount">0</p>
+        </div>
+
+        <div class="stat-card orange">
+            <h3>Suspicious</h3>
+            <p id="suspiciousCount">0</p>
+        </div>
+
+        <div class="stat-card red">
+            <h3>Fake</h3>
+            <p id="fakeCount">0</p>
+        </div>
+    </div>
+
+    <div class="log-table">
+        <h2>Recent Verifications</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Status</th>
+                    <th>Risk Score</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="logTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+async function loadDashboard() {
+
+    const response = await fetch("/admin-data");
+
+    if (!response.ok) {
+        alert("Session expired. Please login again.");
+        window.location.href = "/login";
+        return;
+    }
+
+    const data = await response.json();
+
+    document.getElementById("totalCount").innerText = data.total;
+    document.getElementById("genuineCount").innerText = data.genuine;
+    document.getElementById("suspiciousCount").innerText = data.suspicious;
+    document.getElementById("fakeCount").innerText = data.fake;
+
+    const table = document.getElementById("logTable");
+    table.innerHTML = "";
+
+    data.logs.slice(0, 10).forEach(log => {
+
+        let badgeClass = "";
+        if (log.status === "Genuine") badgeClass = "badge-genuine";
+        else if (log.status === "Suspicious") badgeClass = "badge-suspicious";
+        else badgeClass = "badge-fake";
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${log.filename}</td>
+            <td><span class="status-badge ${badgeClass}">${log.status}</span></td>
+            <td>${log.risk_score}%</td>
+            <td>${log.timestamp}</td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>
